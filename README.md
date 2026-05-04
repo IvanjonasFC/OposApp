@@ -125,33 +125,37 @@ graph TD
 
 ## Estructura del proyecto
 
+```text
 oposapp/
-├── backend/ # Spring Boot API
-│ └── src/main/java/es/ivanesco/oposapp/api/
-│ ├── controllers/ # Un controlador por dominio
-│ ├── services/ # Lógica de negocio (TestService, OllamaService...)
-│ ├── repositories/ # JpaRepository por entidad
-│ ├── models/ # Entidades JPA (@Table(schema="tfg"))
-│ ├── dtos/ # Request/Response DTOs desacoplados
-│ ├── config/ # SecurityConfig, RateLimitFilter, JwtAuthenticationFilter
-│ └── exceptions/ # GlobalExceptionHandler con @RestControllerAdvice
+├── backend/                          # Spring Boot API (Java 21 + Gradle)
+│   └── src/main/java/es/ivanesco/oposapp/api/
+│       ├── controllers/              # Un controlador por dominio (Auth, Test, Bopa, Admin, Ads...)
+│       ├── services/                 # Lógica de negocio (TestService, OllamaService, AuthService...)
+│       ├── repositories/             # JpaRepository por entidad
+│       ├── models/                   # Entidades JPA (@Table(schema="tfg"))
+│       ├── dtos/                     # Request / Response DTOs desacoplados
+│       ├── config/                   # SecurityConfig, RateLimitFilter, JwtAuthenticationFilter
+│       └── exceptions/               # GlobalExceptionHandler con @RestControllerAdvice
 │
-├── frontend/ # Flutter App
-│ └── lib/
-│ ├── main.dart # GoRouter + providers globales
-│ ├── screens/ # Una subcarpeta por pantalla (home, bopa, test, estadisticas, perfil, auth)
-│ ├── widgets/ # AdBannerWidget, LoadingWidget, ErrorWidget
-│ ├── services/ # ApiService (Dio), AuthService, TestService, BopaService
-│ ├── models/ # Clases Dart con factory fromJson manual
-│ └── utils/ # DateUtils (UTC→local), constants.dart
+├── frontend/                         # Flutter App (Android 14+)
+│   └── lib/
+│       ├── main.dart                 # GoRouter + inicialización de providers globales
+│       ├── screens/
+│       │   ├── home/                 # Pantalla principal tras el login
+│       │   ├── bopa/                 # Convocatorias scrapeadas del BOPA
+│       │   ├── test/                 # Listado (TestScreen) y resolución (TestDetailScreen)
+│       │   ├── estadisticas/         # Dashboard de progreso
+│       │   ├── perfil/               # Datos, suscripción, RGPD
+│       │   └── auth/                 # Login y registro
+│       ├── widgets/                  # AdBannerWidget, LoadingWidget, ErrorWidget (reutilizables)
+│       ├── services/                 # ApiService (Dio+JWT), AuthService, TestService, BopaService
+│       ├── models/                   # Clases Dart con factory fromJson manual
+│       └── utils/                    # DateUtils (UTC→local), constants.dart
 │
 └── infra/
-├── docker-compose.yml # PostgreSQL + n8n + Caddy
-└── n8n-workflows/ # Workflow de scraping del BOPA
-
-text
-
----
+    ├── docker-compose.yml            # PostgreSQL 15 + n8n + Caddy
+    └── n8n-workflows/                # Workflow de scraping del BOPA (JSON exportado)
+```
 
 ## Métricas de rendimiento (medidas en pruebas)
 
