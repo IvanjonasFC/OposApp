@@ -24,12 +24,12 @@ La app automatiza el scraping del [BOPA](https://www.asturias.es/bopa) cada 24 h
 
 ```mermaid
 graph TD
-    subgraph NAS ["🖥️ NAS Synology DS924+"]
-        PG["🗄️ PostgreSQL 15\nport 5435 · tfgdb/tfg"]
-        N8N["⚙️ n8n\nScraping BOPA · 07:00 AM"]
-        OL["🤖 Ollama\nQwen 2.5 7B · port 11434"]
-        SB["☕ Spring Boot API\nport 8081 · JWT HS512 · BCrypt · Bucket4j"]
-        CD["🔒 Caddy\nHTTPS · Reverse Proxy"]
+    subgraph NAS [" NAS Synology DS224+"]
+        PG[" PostgreSQL 15\nport 5435 · tfgdb/tfg"]
+        N8N[" n8n\nScraping BOPA · 07:00 AM"]
+        OL[" Ollama\nQwen 2.5 7B · port 11434"]
+        SB[" Spring Boot API\nport 8081 · JWT HS512 · BCrypt · Bucket4j"]
+        CD[" Caddy\nHTTPS · Reverse Proxy"]
 
         N8N -->|"INSERT convocatorias"| PG
         OL -->|"preguntas JSON"| SB
