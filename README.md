@@ -37,7 +37,7 @@ graph TD
         SB --> CD
     end
 
-    FL["📱 Flutter App\nAndroid 14+ · Dio · GoRouter · Hive\nMaterial Design 3"]
+    FL[" Flutter App\nAndroid 14+ · Dio · GoRouter · Hive\nMaterial Design 3"]
 
     CD <-->|"HTTPS / REST + JWT"| FL
 ```
