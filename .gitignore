@@ -1,0 +1,35 @@
+
+# =============================================================
+#  OposApp — .gitignore raiz del monorepo
+# =============================================================
+
+# ── Secretos — NUNCA subir a Git ─────────────────────────────
+.env
+*.env.local
+*.env.production
+
+# ── Artefactos de Docker y build ─────────────────────────────
+*.tar
+*.jar
+*.war
+
+# ── Logs de JVM crash ────────────────────────────────────────
+hs_err_pid*.log
+replay_pid*.log
+
+# ── Carpetas de trabajo temporal (basura del desarrollo) ──────
+Basura/
+_basura*/
+*/_basura*/
+
+# ── IDE ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

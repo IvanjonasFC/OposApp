@@ -1,0 +1,44 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: "jdbc:postgresql://<HOST>:<PORT>/tfg_db?currentSchema=tfg"
+    username: "<DB_USER>"
+    password: "<DB_PASSWORD>"
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: <TU_EMAIL>@gmail.com
+    password: "<APP_PASSWORD_16_DIGITOS>"   # Google → Seguridad → Contraseñas de aplicaciones
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+
+jwt:
+  secret: "<MIN_512_BITS_SECRET>"
+  expiration: 604800000   # 7 días en ms
+
+ollama:
+  url: "http://<OLLAMA_HOST>:11434"
+
+app:
+  url: "https://<TU_DOMINIO>"   # URL pública de la API (aparece en emails)
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

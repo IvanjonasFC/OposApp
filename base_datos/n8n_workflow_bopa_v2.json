@@ -1,0 +1,155 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "triggerAtHour": 8 }]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-320, -80],
+      "id": "d58718bc-bbd9-4fd0-96bc-8276fa23b4b7",
+      "name": "Diario 08:00"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO tfg.historial_scraping (fuente, fecha_scraping, url_scrapeada, estado)\nVALUES ('Asturias.es Oposiciones', NOW(), 'https://www.asturias.es/temas/empleo/empleo-publico/buscador-de-oposiciones', 'iniciado')\nRETURNING id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-96, -80],
+      "id": "3db1450f-a697-4ec3-a423-a8fa00a25242",
+      "name": "Log inicio scraping",
+      "credentials": {
+        "postgres": { "id": "cOWU9AeohOtOstcs", "name": "Postgres account" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const totalPaginas = 15;\nconst paginas = [];\nfor (let i = 1; i <= totalPaginas; i++) {\n  paginas.push({ json: { pagina: i, delta: 50, estado: 3 } });\n}\nconsole.log(`Generadas ${totalPaginas} páginas para scrapear`);\nreturn paginas;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [192, -80],
+      "id": "282786df-2e2d-4fc4-a1b6-f3129e7eab63",
+      "name": "Generar páginas"
+    },
+    {
+      "parameters": { "options": { "reset": false } },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [432, -80],
+      "id": "e7e3f574-4911-4417-90cd-9b58ca5f1da6",
+      "name": "Loop páginas"
+    },
+    {
+      "parameters": { "amount": "={{ Math.floor(Math.random() * (60 - 45 + 1)) + 45 }}" },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [752, -96],
+      "id": "0ad6074d-fc77-425b-b9c3-38a2ecaeeb0b",
+      "name": "Wait 45-60s",
+      "webhookId": "9203d5ef-8f1d-4321-b33b-1e598bb24398"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.asturias.es/temas/empleo/empleo-publico/buscador-de-oposiciones?p_r_p_opo_estado={{ $json.estado }}&_pa_webasturias_buscadoroposiciones_detalle_WebasturiasDetalleBuscadorOposicionesWebPortlet_delta={{ $json.delta }}&_pa_webasturias_buscadoroposiciones_detalle_WebasturiasDetalleBuscadorOposicionesWebPortlet_cur={{ $json.pagina }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "User-Agent", "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" },
+            { "name": "Accept", "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+            { "name": "Accept-Language", "value": "es-ES,es;q=0.9,en;q=0.5" },
+            { "name": "Accept-Encoding", "value": "gzip, deflate, br" },
+            { "name": "Connection", "value": "keep-alive" },
+            { "name": "Referer", "value": "https://www.asturias.es/temas/empleo/empleo-publico/buscador-de-oposiciones" },
+            { "name": "Cache-Control", "value": "no-cache" }
+          ]
+        },
+        "options": {
+          "redirect": { "redirect": { "maxRedirects": 5 } },
+          "response": { "response": { "responseFormat": "text" } },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1008, -96],
+      "id": "2a1ed87c-4779-4261-9536-91544a0ad5fe",
+      "name": "GET Oposiciones"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.all()[0].json.data;\nif (!html || typeof html !== 'string') return [{ json: { error: 'No HTML' } }];\nif (html.includes('Web Page Blocked') || html.includes('Attack ID')) {\n  console.log('WAF BLOCK detectado - saltando página');\n  return [{ json: { error: 'WAF_BLOCKED', skip: true } }];\n}\nconsole.log(`HTML: ${html.length} chars`);\nconst convocatorias = [];\nconst regexLink = /<a[^>]+class=[\"'][^\"']*detalle[^\"']*[\"'][^>]*>([\\s\\S]*?)<\\/a>/gi;\nlet m, cnt = 0;\nwhile ((m = regexLink.exec(html)) !== null && cnt < 500) {\n  cnt++;\n  const linkFull = m[0], tituloHTML = m[1];\n  const idM = linkFull.match(/id=[\"']([^\"']+)[\"']/i);\n  const idLink = idM ? idM[1] : '';\n  let numExp = idLink.replace('detalleLink_','').replace('detalle_','');\n  const titulo = tituloHTML.replace(/<[^>]+>/g,'').replace(/\\n\\s+/g,' ').replace(/\\s+/g,' ').trim();\n  const si = Math.max(0, m.index - 1500);\n  const ei = Math.min(html.length, m.index + linkFull.length + 1500);\n  const ctx = html.substring(si, ei);\n  const extraer = (h, labels) => {\n    for (const l of labels) {\n      const p = new RegExp(`>${l}[\\\\s\\\\S]*?<span[^>]*>([^<]*)<\\\\/span>`,'i');\n      const r = h.match(p); if (r) return r[1].trim();\n    } return '';\n  };\n  const fechaBopa = extraer(ctx, ['Fecha de publicaci','Fecha publicaci','Fecha BOPA']);\n  let np = 0;\n  const npt = extraer(ctx, ['mero total de plazas:','N.º plazas:','Plazas:']);\n  if (npt) np = parseInt(npt.match(/\\d+/)?.[0]) || 0;\n  if (!np) { const tp = titulo.match(/(\\d+)\\s+PLAZA/i); if (tp) np = parseInt(tp[1]); }\n  let cat = 'Otros';\n  const tl = titulo.toLowerCase();\n  if (tl.includes('policía local')||tl.includes('policia local')) cat='Policía Local';\n  else if (tl.includes('bombero')) cat='Bomberos';\n  else if (tl.includes('enferm')||tl.includes('celador')||tl.includes('fisioterapeut')||tl.includes('sespa')||tl.includes('sanidad')) cat='Sanidad';\n  else if (tl.includes('maestr')||tl.includes('profesor')||tl.includes('educaci')) cat='Educación';\n  else if (tl.includes('administrativ')) cat='Administración General';\n  else if (tl.includes('medio ambient')||tl.includes('medioambient')) cat='Medio Ambiente';\n  const bopa = numExp ? `BOPA-${numExp.replace(/\\//g,'-')}` : `BOPA-${Date.now()}-${cnt}`;\n  if (titulo && titulo.length >= 10) {\n    convocatorias.push({ json: {\n      bopa_numero: bopa, titulo: titulo, organismo: 'Principado de Asturias',\n      categoria: cat, url_bopa: `https://www.asturias.es/oposiciones?p_r_p_opo_id=${numExp}`,\n      titulo_completo: titulo, num_plazas: np,\n      fecha_publicacion: fechaBopa, fecha_scraping: new Date().toISOString()\n    }});\n    console.log(`[${cnt}] ${titulo} (${cat}) ${np} plazas`);\n  }\n}\nconsole.log(`Total: ${convocatorias.length}`);\nif (!convocatorias.length) return [{ json: { error: 'Sin resultados', skip: true } }];\nreturn convocatorias;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1264, -96],
+      "id": "0a3bd5f9-89c7-4256-bfc5-300484b2eeb3",
+      "name": "Parsear HTML"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [{ "value1": "={{ $json.skip }}", "value2": true }]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1384, -96],
+      "id": "filter-skip-01",
+      "name": "¿Skip?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO tfg.convocatorias\n(bopa_numero, fecha_publicacion, titulo, organismo, categoria, url_bopa, texto_completo, num_plazas, activo, fecha_scraping)\nVALUES (\n  '{{ $json.bopa_numero }}',\n  CASE\n    WHEN '{{ $json.fecha_publicacion }}' ~ '^\\d{2}/\\d{2}/\\d{4}$'\n    THEN TO_DATE('{{ $json.fecha_publicacion }}', 'DD/MM/YYYY')\n    WHEN '{{ $json.fecha_publicacion }}' ~ '^\\d{4}-\\d{2}-\\d{2}$'\n    THEN TO_DATE('{{ $json.fecha_publicacion }}', 'YYYY-MM-DD')\n    ELSE CURRENT_DATE\n  END,\n  '{{ $json.titulo }}',\n  '{{ $json.organismo }}',\n  '{{ $json.categoria }}',\n  '{{ $json.url_bopa }}',\n  '{{ $json.titulo_completo }}',\n  {{ $json.num_plazas || 0 }},\n  true,\n  NOW()\n)\nON CONFLICT (bopa_numero, titulo)\nDO UPDATE SET\n  fecha_publicacion = EXCLUDED.fecha_publicacion,\n  organismo = EXCLUDED.organismo,\n  categoria = EXCLUDED.categoria,\n  url_bopa = EXCLUDED.url_bopa,\n  texto_completo = EXCLUDED.texto_completo,\n  num_plazas = EXCLUDED.num_plazas,\n  fecha_scraping = NOW(),\n  activo = true\nRETURNING id, bopa_numero, titulo, (xmax = 0) as es_nueva;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1604, -196],
+      "id": "708aa663-ee2a-49bf-8c6a-acfaf939273f",
+      "name": "UPSERT convocatoria",
+      "credentials": {
+        "postgres": { "id": "cOWU9AeohOtOstcs", "name": "Postgres account" }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Skip (WAF/vacío)",
+      "typeVersion": 1,
+      "position": [1604, 50],
+      "id": "e989e06e-8ac4-4cbd-8676-beef4c3489a5"
+    }
+  ],
+  "connections": {
+    "Diario 08:00": { "main": [[{ "node": "Log inicio scraping", "type": "main", "index": 0 }]] },
+    "Log inicio scraping": { "main": [[{ "node": "Generar páginas", "type": "main", "index": 0 }]] },
+    "Generar páginas": { "main": [[{ "node": "Loop páginas", "type": "main", "index": 0 }]] },
+    "Loop páginas": {
+      "main": [
+        [{ "node": "Wait 45-60s", "type": "main", "index": 0 }],
+        [{ "node": "Skip (WAF/vacío)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wait 45-60s": { "main": [[{ "node": "GET Oposiciones", "type": "main", "index": 0 }]] },
+    "GET Oposiciones": { "main": [[{ "node": "Parsear HTML", "type": "main", "index": 0 }]] },
+    "Parsear HTML": { "main": [[{ "node": "¿Skip?", "type": "main", "index": 0 }]] },
+    "¿Skip?": {
+      "main": [
+        [{ "node": "Skip (WAF/vacío)", "type": "main", "index": 0 }],
+        [{ "node": "UPSERT convocatoria", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "86a7b01c27d6f1466d2d703bee5a0c50accf08ae471d01047acffc2b4018d851"
+  }
+}

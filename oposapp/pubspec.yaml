@@ -1,0 +1,76 @@
+name: oposapp
+description: App de preparación de oposiciones con IA
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP y API REST (equivalente a Retrofit)
+  dio: ^5.4.0
+  retrofit: ^4.0.0
+  json_annotation: ^4.8.1
+  
+  # Storage local (equivalente a SharedPreferences + Room)
+  shared_preferences: ^2.2.2
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
+  
+  # State management (equivalente a ViewModel + LiveData)
+  provider: ^6.1.1
+  
+  # UI Components
+  flutter_spinkit: ^5.2.0        # Loading animations
+  cached_network_image: ^3.3.0   # Imágenes con cache
+  pull_to_refresh: ^2.0.0        # SwipeRefreshLayout
+  confetti: ^0.7.0               # Animaciones de Confetti
+
+  # Gráficas (equivalente a MPAndroidChart)
+  fl_chart: ^0.66.0
+  percent_indicator: ^4.2.3
+  
+  # Utilidades
+  intl: ^0.18.1                  # Formateo de fechas
+  url_launcher: ^6.2.2           # Abrir PDFs externos
+  permission_handler: ^11.3.1    # Gestión de permisos
+  connectivity_plus: ^6.0.3      # Detección de red offline
+  network_info_plus: ^5.0.1      # Obtener IP local
+  
+  # Icons adicionales
+  font_awesome_flutter: ^10.6.0
+
+  # UX & Animations (Nuevas)
+  shimmer: ^3.0.0
+  flutter_staggered_animations: ^1.1.1
+
+  # Security & Storage Nuevos
+  flutter_secure_storage: ^9.2.2 # Tokens seguros
+  hive_flutter: ^1.1.0           # Caché local rápido
+
+  # Routing
+  go_router: ^14.0.0             # Navegación avanzada
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FF6B00"
+  adaptive_icon_foreground: "assets/icon.png"
+  web:
+    generate: false
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/

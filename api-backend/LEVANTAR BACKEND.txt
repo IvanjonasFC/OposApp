@@ -1,0 +1,124 @@
+============================================================
+  OposApp Backend — Guía de arranque rápido
+  Spring Boot 3.5.11 · Java 21 · Puerto 8081
+============================================================
+
+REQUISITOS PREVIOS
+──────────────────
+  · Java 21 instalado (comprobar: java -version)
+  · Gradle wrapper incluido en el proyecto (no hace falta instalarlo)
+  · PostgreSQL 15 corriendo en <IP_NAS>:5435 (NAS)
+  · Ollama corriendo en localhost:11434 o <IP_OLLAMA>:11434
+    Modelos necesarios:
+      ollama pull qwen2.5-coder:7b-instruct   (usuarios FREE)
+      ollama pull qwen3-64k:latest             (usuarios PREMIUM)
+
+
+────────────────────────────────────────────────────────────
+  ARRANQUE EN DESARROLLO (perfil por defecto)
+────────────────────────────────────────────────────────────
+
+  Windows (cmd/PowerShell):
+    .\gradlew.bat bootRun
+
+  Linux / macOS:
+    ./gradlew bootRun
+
+  La API queda disponible en:
+    http://localhost:8081
+
+  Swagger UI (documentación interactiva de endpoints):
+    http://localhost:8081/swagger-ui.html
+
+  Health check:
+    http://localhost:8081/actuator/health
+
+
+────────────────────────────────────────────────────────────
+  ARRANQUE CON PERFIL NAS (producción en Synology DS920+)
+────────────────────────────────────────────────────────────
+
+  Primero, asegúrate de que las variables de entorno del .env
+  están cargadas, luego:
+
+    .\gradlew.bat bootRun --args="--spring.profiles.active=nas"
+
+  O vía Docker (recomendado para producción):
+
+    docker-compose up -d --build
+
+  Logs en tiempo real:
+    docker-compose logs -f oposapp-api
+
+
+────────────────────────────────────────────────────────────
+  COMPILAR EL JAR (sin ejecutar)
+────────────────────────────────────────────────────────────
+
+    .\gradlew.bat bootJar
+
+  El JAR queda en: build/libs/oposapp-0.0.1-SNAPSHOT.jar
+
+  Ejecutar el JAR directamente:
+    java -jar build\libs\oposapp-0.0.1-SNAPSHOT.jar
+
+
+────────────────────────────────────────────────────────────
+  EJECUTAR LOS TESTS
+────────────────────────────────────────────────────────────
+
+  Las pruebas funcionales se realizaron con Swagger UI
+  (http://localhost:8081/swagger-ui.html) y se documentan
+  en la Entrega 7 del TFG.
+
+  Para ejecutar los tests unitarios incluidos:
+    .\gradlew.bat test
+
+  Informe de tests: build/reports/tests/test/index.html
+
+
+────────────────────────────────────────────────────────────
+  CONFIGURACIÓN RÁPIDA — VARIABLES DE ENTORNO
+────────────────────────────────────────────────────────────
+
+  La aplicación carga secretos desde variables de entorno.
+  En desarrollo, usa los valores por defecto del application.yml.
+  En producción, copia el .env.example como .env y rellena:
+
+    DB_URL            → URL de la base de datos PostgreSQL
+    DB_USER           → Usuario PostgreSQL
+    DB_PASSWORD       → Contraseña PostgreSQL
+    JWT_SECRET        → Clave HS512 (min. 64 bytes en Base64)
+    MAIL_USER         → Email de notificaciones (Gmail)
+    MAIL_PASSWORD     → App Password de Gmail (16 chars)
+    OLLAMA_URL        → URL del servidor Ollama
+    OLLAMA_MODEL_FREE → Modelo para usuarios FREE
+    OLLAMA_MODEL_PREMIUM → Modelo para usuarios PREMIUM
+
+
+────────────────────────────────────────────────────────────
+  SOLUCIÓN DE PROBLEMAS COMUNES
+────────────────────────────────────────────────────────────
+
+  Error: "Connection refused" a PostgreSQL
+    → Verificar que el NAS está encendido y el contenedor
+      de PostgreSQL corriendo:
+      docker ps | grep postgres
+
+  Error: "Ollama connection refused"
+    → Verificar que Ollama está activo:
+      curl http://localhost:11434/api/tags
+    → Arrancar Ollama: ollama serve
+
+  Error: "ddl-auto=validate" al iniciar con perfil nas
+    → El schema de la BD no coincide con las entidades.
+      Revisar las migraciones en src/main/resources/migrations/
+
+  Error: "Cannot find symbol: getRealUsername()"
+    → Limpiar la caché de compilación:
+      .\gradlew.bat clean bootRun
+
+  Puerto 8081 ya en uso
+    → Windows: netstat -ano | findstr :8081
+      Después:  taskkill /PID <pid> /F
+

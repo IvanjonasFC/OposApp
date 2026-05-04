@@ -1,0 +1,81 @@
+version: '3.9'
+
+# =============================================================
+#  OposApp Backend — Docker Compose (Synology DS920+)
+#
+#  Red: mgmt_net (red interna del NAS donde está el postgres)
+#  Puerto externo: 8083 → 8081 interno Spring Boot
+#  BD: n8n-stack-n8n-db-1:5432 (acceso por nombre de contenedor)
+# =============================================================
+
+services:
+
+  oposapp-api:
+    image: oposapp-api:latest
+    container_name: oposapp-api
+    restart: unless-stopped
+    env_file: .env
+
+    environment:
+      SPRING_PROFILES_ACTIVE: "nas"
+      # Puerto 5432 interno del contenedor — NO el 5435 del host
+      DB_URL: "jdbc:postgresql://n8n-stack-n8n-db-1:5432/tfg_db?currentSchema=tfg"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      JWT_SECRET: "${JWT_SECRET}"
+      MAIL_USER: "${MAIL_USER}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD}"
+      OLLAMA_URL: "${OLLAMA_URL}"
+      OLLAMA_MODEL_FREE: "${OLLAMA_MODEL_FREE}"
+      OLLAMA_MODEL_PREMIUM: "${OLLAMA_MODEL_PREMIUM}"
+      APP_URL: "${APP_URL}"
+      # JVM: heap acotado para no ahogar el NAS
+      JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC"
+      # Zona horaria del NAS
+      TZ: "Europe/Madrid"
+
+    ports:
+      # Solo accesible desde la red local — no expuesto a internet
+      - "0.0.0.0:8083:8081"
+
+    networks:
+      # mgmt_net: red donde vive n8n-stack-n8n-db-1
+      # Permite resolver el contenedor postgres por nombre
+      - mgmt_net
+
+    # ── Seguridad ──────────────────────────────────────────────
+    security_opt:
+      - no-new-privileges:true   # el proceso no puede escalar privilegios
+    read_only: true              # filesystem del contenedor en solo lectura
+    tmpfs:
+      - /tmp:size=128m,noexec    # Spring necesita /tmp para uploads temporales
+
+    # ── Límites de recursos ────────────────────────────────────
+    # Synology DS920+ no soporta CFS CPU scheduler → solo límite de RAM
+    mem_limit: 600m
+    mem_reservation: 256m
+
+    # ── Health check ───────────────────────────────────────────
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep -q 'UP' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s         # Spring + Hibernate necesitan tiempo al arrancar
+
+    # ── Logs rotados ───────────────────────────────────────────
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # ── Labels para Portainer / Uptime Kuma ───────────────────
+    labels:
+      - "com.oposapp.service=backend"
+      - "com.oposapp.version=1.0"
+      - "com.oposapp.description=OposApp Spring Boot API"
+
+networks:
+  mgmt_net:
+    external: true   # red ya existente en el NAS — no la crea este compose
