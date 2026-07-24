@@ -1,5 +1,3 @@
-<div align="center">
-
 <img src="assets/opposapp.png" width="880" alt="OposApp — seguimiento del BOPA y tests con IA local" />
 <div align="center">
 
