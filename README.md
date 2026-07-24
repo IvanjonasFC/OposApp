@@ -8,6 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)](https://www.postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://docs.docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Portfolio](https://img.shields.io/badge/Portfolio-ff6b00?logo=astro&logoColor=white)](https://portfolio.ivanjonasfc.dev/proyectos/oposapp/)
 
 ---
 
@@ -20,16 +21,20 @@ OposApp resuelve dos problemas reales del opositor medio en Asturias:
 
 La app automatiza el scraping del [BOPA](https://www.asturias.es/bopa) cada 24 horas y usa un modelo de IA local (Ollama + Qwen 2.5 7B) para generar tests personalizados en menos de 15 segundos — **sin enviar ningún dato a servicios externos**. Todo el procesamiento ocurre en infraestructura propia, cumpliendo el RGPD por diseño.
 
+> **Un único APK para dos entornos.** Al arrancar, la app comprueba si el NAS es alcanzable en la red local (`192.168.0.200:8083`); si lo es, usa la IP directa (más rápido, sin TLS); si no, cae automáticamente al dominio HTTPS externo (`https://opposapp.ivanjonasfc.dev/api`). El mismo binario funciona dentro y fuera de la LAN sin recompilar.
+
+Este proyecto es mi **Trabajo de Fin de Grado** (DAM). Ficha completa en el [portfolio](https://portfolio.ivanjonasfc.dev/proyectos/oposapp/).
+
 ## Arquitectura del sistema
 
 ```mermaid
 graph TD
     subgraph NAS [" NAS Synology DS224+"]
-        PG[" PostgreSQL 15\nport 5435 · tfgdb/tfg"]
-        N8N[" n8n\nScraping BOPA · 07:00 AM"]
-        OL[" Ollama\nQwen 2.5 7B · port 11434"]
-        SB[" Spring Boot API\nport 8081 · JWT HS512 · BCrypt · Bucket4j"]
-        CD[" Caddy\nHTTPS · Reverse Proxy"]
+        PG[" PostgreSQL 15 · schema tfg"]
+        N8N[" n8n · Scraping BOPA · 07:00 AM"]
+        OL[" Ollama · Qwen 2.5 7B · 11434"]
+        SB[" Spring Boot API · 8083→8081 · JWT HS512 · BCrypt · Bucket4j"]
+        CD[" Caddy · HTTPS · Reverse Proxy"]
 
         N8N -->|"INSERT convocatorias"| PG
         OL -->|"preguntas JSON"| SB
@@ -37,9 +42,10 @@ graph TD
         SB --> CD
     end
 
-    FL[" Flutter App\nAndroid 14+ · Dio · GoRouter · Hive\nMaterial Design 3"]
+    FL[" Flutter App · Android 14+ · Dio+Retrofit · GoRouter · provider · Hive · Material 3"]
 
-    CD <-->|"HTTPS / REST + JWT"| FL
+    FL -->|"LAN: IP directa"| SB
+    CD <-->|"HTTPS / REST + JWT (fuera de LAN)"| FL
 ```
 
 ## Stack tecnológico
@@ -59,24 +65,26 @@ graph TD
 
 ### Frontend
 
-| Componente                 | Detalle                                                                          |
-| -------------------------- | -------------------------------------------------------------------------------- |
-| **Flutter 3.24**           | Android 14.0+, un único código base compila también para web                     |
-| **Dio**                    | Cliente HTTP con interceptor JWT global (equivalente a Axios)                    |
-| **GoRouter**               | Enrutado declarativo con redirecciones automáticas según estado de autenticación |
-| **flutter_secure_storage** | Almacenamiento seguro del token en el Keystore nativo del dispositivo            |
-| **Hive**                   | Caché local clave-valor para modo offline (últimas 30 convocatorias)             |
-| **fl_chart**               | Gráficos de progreso (líneas, barras) con puntos naranja y área degradada        |
-| **provider**               | Gestión de estado reactivo siguiendo el patrón ViewModel                         |
-| **Material Design 3**      | `useMaterial3: true`, color semilla `#FF6B00`, modo oscuro/claro                 |
+| Componente                   | Detalle                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| **Flutter 3.24**             | Android 14.0+, un único código base (compila también para web)                                |
+| **Dio + Retrofit**           | Cliente HTTP con interceptor JWT global y cliente tipado                                       |
+| **GoRouter**                 | Enrutado declarativo con redirecciones según el estado de autenticación                        |
+| **provider**                 | Gestión de estado reactivo siguiendo el patrón ViewModel                                       |
+| **flutter_secure_storage**   | Almacenamiento seguro del token en el Keystore nativo del dispositivo                          |
+| **Hive**                     | Caché local clave-valor para **modo offline** (últimas convocatorias)                         |
+| **connectivity_plus / network_info_plus** | Detección de red y de IP local — base de la autodetección LAN/HTTPS              |
+| **fl_chart + percent_indicator** | Gráficos de progreso (líneas, barras, anillos) con acento naranja                         |
+| **confetti / shimmer / staggered_animations** | Animación de resultados y microinteracciones de carga                        |
+| **Material Design 3**        | `useMaterial3: true`, color semilla `#FF6B00`, tema claro                                      |
 
 ### Automatización e IA
 
-| Componente                        | Detalle                                                                       |
-| --------------------------------- | ----------------------------------------------------------------------------- |
-| **n8n**                           | Workflow de scraping del BOPA, se dispara a las 07:00 AM (CET) todos los días |
-| **Ollama + Qwen 2.5 7B (Q4_K_M)** | Generación de tests localmente, sin API de pago, sin salida de datos          |
-| **Caddy Server**                  | Reverse proxy con certificados HTTPS automáticos (Let's Encrypt)              |
+| Componente                          | Detalle                                                                       |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| **n8n**                             | Workflow de scraping del BOPA, se dispara a las 07:00 AM (CET) todos los días |
+| **Ollama + Qwen 2.5 7B (Q4_K_M)**   | Generación de tests localmente, sin API de pago, sin salida de datos          |
+| **Caddy Server**                    | Reverse proxy con certificados HTTPS automáticos (Let's Encrypt)              |
 
 ---
 
@@ -87,36 +95,42 @@ graph TD
 - Scraping automatizado diario — sin intervención manual
 - Filtros por categoría, organismo, fecha y estado (activa/cerrada)
 - Búsqueda full-text con tolerancia a errores tipográficos
-- Favoritos sincronizados en tiempo real, accesibles offline mediante caché SQLite
+- Favoritos accesibles **offline** mediante caché local **Hive**
 
 ### Generación de tests con IA
 
 - Configuración: categoría, número de preguntas (5–20) y dificultad (Baja/Media/Alta)
 - Flujo asíncrono: el backend responde con `solicitudId` inmediatamente, Ollama procesa en segundo plano
-- Flutter hace polling cada 3 segundos sobre `GET /api/tests/solicitud/{id}/estado`
+- Flutter hace *polling* del estado de la solicitud hasta que el test está listo
 - Corrección inmediata con explicación por pregunta generada por la IA
 - Tiempo de generación medido: **11,3 s** para 10 preguntas (límite establecido: 15 s)
 
 ### Dashboard de progreso
 
 - KPIs en tiempo real: tests completados, aciertos, racha de días
-- Gráfico de línea con evolución de los últimos 7 tests
+- Gráfico de línea con la evolución de los últimos tests
 - Historial completo ordenable por fecha/puntuación
+
+### Panel de administración (rol `ROLE_ADMIN`)
+
+- Métricas de usuarios y tests, estado de servicios (PostgreSQL, Ollama)
+- Registro de **auditoría** de acciones
+- Estado del scraping semanal del BOPA
 
 ### RGPD (Privacy by Design)
 
 - Checkbox obligatorio no pre-marcado en el registro, con log de timestamp de consentimiento
-- `DELETE /api/user/delete` — borrado completo e irreversible en 48 horas (Art. 17)
+- `DELETE /api/user/delete` — borrado completo e irreversible de la cuenta (Art. 17)
 - `GET /api/user/export` — exportación JSON del perfil e historial (Art. 20)
 
 ### Modelo Freemium
 
 |                         | Gratuito                                     | Premium (7 €/mes · 70 €/año) |
 | ----------------------- | -------------------------------------------- | ---------------------------- |
-| Convocatorias BOPA      | ✅                                           | ✅                           |
-| Tests ilimitados con IA | ✅                                           | ✅                           |
-| Dashboard de progreso   | ✅                                           | ✅                           |
-| Publicidad              | Banner inferior + interstitial cada 10 tests | ❌ Sin publicidad            |
+| Convocatorias BOPA      | ✅                                            | ✅                            |
+| Tests ilimitados con IA | ✅                                            | ✅                            |
+| Dashboard de progreso   | ✅                                            | ✅                            |
+| Publicidad              | Banner inferior + interstitial cada 10 tests | ❌ Sin publicidad             |
 | Modelo IA               | Estándar                                     | Optimizado                   |
 | Soporte                 | —                                            | SLA 12 horas                 |
 | Roadmap                 | —                                            | Voto en funcionalidades      |
@@ -126,8 +140,8 @@ graph TD
 ## Estructura del proyecto
 
 ```text
-oposapp/
-├── backend/                          # Spring Boot API (Java 21 + Gradle)
+OposApp/
+├── api-backend/                      # Spring Boot API (Java 21 + Gradle)
 │   └── src/main/java/es/ivanesco/oposapp/api/
 │       ├── controllers/              # Un controlador por dominio (Auth, Test, Bopa, Admin, Ads...)
 │       ├── services/                 # Lógica de negocio (TestService, OllamaService, AuthService...)
@@ -137,24 +151,23 @@ oposapp/
 │       ├── config/                   # SecurityConfig, RateLimitFilter, JwtAuthenticationFilter
 │       └── exceptions/               # GlobalExceptionHandler con @RestControllerAdvice
 │
-├── frontend/                         # Flutter App (Android 14+)
+├── oposapp/                          # App Flutter (Android 14+)
 │   └── lib/
-│       ├── main.dart                 # GoRouter + inicialización de providers globales
-│       ├── screens/
-│       │   ├── home/                 # Pantalla principal tras el login
-│       │   ├── bopa/                 # Convocatorias scrapeadas del BOPA
-│       │   ├── test/                 # Listado (TestScreen) y resolución (TestDetailScreen)
-│       │   ├── estadisticas/         # Dashboard de progreso
-│       │   ├── perfil/               # Datos, suscripción, RGPD
-│       │   └── auth/                 # Login y registro
-│       ├── widgets/                  # AdBannerWidget, LoadingWidget, ErrorWidget (reutilizables)
-│       ├── services/                 # ApiService (Dio+JWT), AuthService, TestService, BopaService
-│       ├── models/                   # Clases Dart con factory fromJson manual
-│       └── utils/                    # DateUtils (UTC→local), constants.dart
+│       ├── main.dart                 # MaterialApp.router + init (red, Hive) antes de runApp
+│       ├── core/
+│       │   ├── constants/            # api_constants.dart (URLs LAN/HTTPS, endpoints, timeouts)
+│       │   ├── routing/              # app_router.dart (GoRouter, rutas y guardas)
+│       │   ├── theme/                # app_colors.dart, app_theme.dart (seed #FF6B00)
+│       │   └── errors/               # app_exception.dart
+│       ├── screens/                  # splash, login, home, bopa, generate, tests, test, resultado, progreso, perfil, admin
+│       ├── services/                 # api_service (Dio+JWT), auth_service, admin_service, network_service
+│       ├── models/                   # usuario, convocatoria, pregunta, solicitud_generacion, estadisticas, audit_log...
+│       ├── widgets/                  # ad_banner_widget, app_toast, reporte_dialog
+│       └── cache/                    # hive_cache.dart (modo offline)
 │
-└── infra/
-    ├── docker-compose.yml            # PostgreSQL 15 + n8n + Caddy
-    └── n8n-workflows/                # Workflow de scraping del BOPA (JSON exportado)
+├── base_datos/                       # Scripts SQL / schema tfg
+├── assets/                           # Recursos e imágenes
+└── docker-compose.yml                # PostgreSQL 15 + n8n + Caddy
 ```
 
 ## Métricas de rendimiento (medidas en pruebas)
@@ -196,6 +209,7 @@ oposapp/
 docker-compose up -d
 
 # 2. Compilar y ejecutar Spring Boot (puerto 8081)
+cd api-backend
 ./gradlew bootRun
 
 # 3. Documentación interactiva de la API
@@ -205,6 +219,8 @@ docker-compose up -d
 ### Frontend
 
 ```bash
+cd oposapp
+
 # Instalar dependencias
 flutter pub get
 
@@ -215,15 +231,17 @@ flutter run
 flutter run -d chrome
 ```
 
+> La URL del backend se resuelve en runtime en `ApiService.initialize()`: LAN → `192.168.0.200:8083`, fuera de LAN → `https://opposapp.ivanjonasfc.dev/api`. Para desarrollo local en el propio PC, usa `baseUrlLocal` (`http://localhost:8081/api`) en `api_constants.dart`.
+
 ### Producción (NAS Synology)
 
 ```bash
 # Levanta PostgreSQL, n8n y Caddy
 docker-compose up -d
 
-# Ollama accesible en http://192.168.0.211:11434
-# Spring Boot desplegado en puerto 8081
-# Caddy gestiona HTTPS y enrutamiento interno
+# Spring Boot desplegado en el NAS (Docker 8083 → 8081 interno)
+# Ollama accesible en la red local (puerto 11434)
+# Caddy gestiona HTTPS y enrutamiento hacia opposapp.ivanjonasfc.dev
 ```
 
 ---
@@ -233,9 +251,10 @@ docker-compose up -d
 | Error                            | Causa probable                                                                                      | Solución                                                                |
 | -------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | App no recibe token tras login   | Interceptor Dio no adjunta `Authorization: Bearer`                                                  | Revisar `ApiService` y los logs del backend                             |
-| Timeout en generación de tests   | Ollama apagado o saturado                                                                           | Verificar `http://192.168.0.211:11434` desde la red local               |
-| Error Hibernate 6 al arrancar    | Entidades sin `@Table(schema="tfg")` o campos `Double`/`Float` con `scale`/`precision` en `@Column` | Eliminar `scale`/`precision` de campos no `BigDecimal`                  |
-| Scraping del BOPA sin resultados | Fallo en algún nodo del workflow n8n                                                                | Consultar tabla `historial_scraping` para identificar el punto de fallo |
+| App apunta al entorno equivocado | Autodetección LAN/HTTPS: el NAS no responde en `192.168.0.200:8083`                                  | Verificar que el NAS es alcanzable en la LAN; si no, usará el HTTPS externo |
+| Timeout en generación de tests   | Ollama apagado o saturado                                                                            | Verificar que Ollama responde en el puerto `11434` desde la red local   |
+| Error Hibernate 6 al arrancar    | Entidades sin `@Table(schema="tfg")` o campos `Double`/`Float` con `scale`/`precision` en `@Column` | Eliminar `scale`/`precision` de campos no `BigDecimal`                   |
+| Scraping del BOPA sin resultados | Fallo en algún nodo del workflow n8n                                                                | Consultar la tabla de historial de scraping para localizar el fallo     |
 
 ---
 
@@ -252,9 +271,12 @@ docker-compose up -d
 
 ## Autor
 
-**Iván Jonas Fernández Correa**  
-TFG — Desarrollo de Aplicaciones Multiplataforma (DAM) · Curso 2025-2026  
+**Iván Jonás Fernández Correa**
+TFG — Desarrollo de Aplicaciones Multiplataforma (DAM) · Curso 2025-2026
 Tutores: Delio Tolivia Cadrecha (PIDAM) · Mario Álvarez Fernández (PDAW)
+
+- Portfolio: https://portfolio.ivanjonasfc.dev
+- LinkedIn: https://linkedin.com/in/ivanjonasfc
 
 ---
 
