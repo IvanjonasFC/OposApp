@@ -1,8 +1,10 @@
 <div align="center">
 
+<img src="assets/opposapp.png" width="880" alt="OposApp — seguimiento del BOPA y tests con IA local" />
+
 # OposApp
 
-**Seguimiento automático del BOPA + tests de práctica con IA local — con privacidad total.**
+**Seguimiento automático del BOPA y tests de práctica con IA local — con privacidad total.**
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.24-blue?logo=flutter)](https://flutter.dev)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-brightgreen?logo=spring)](https://spring.io/projects/spring-boot)
@@ -11,14 +13,6 @@
 [![Ollama](https://img.shields.io/badge/IA_local-Ollama-ff6b00?logo=ollama&logoColor=white)](https://ollama.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Portfolio](https://img.shields.io/badge/Portfolio-ff6b00?logo=astro&logoColor=white)](https://portfolio.ivanjonasfc.dev/proyectos/oposapp/)
-
-<table>
-  <tr>
-    <td align="center"><img src="assets/Login.jpg" width="240" alt="Login" /></td>
-    <td align="center"><img src="assets/Bopa.jpg" width="240" alt="Convocatorias BOPA" /></td>
-    <td align="center"><img src="assets/Dashboard.jpg" width="240" alt="Dashboard de progreso" /></td>
-  </tr>
-</table>
 
 </div>
 
@@ -30,34 +24,29 @@ Aplicación móvil para opositores que resuelve dos problemas reales del oposito
 
 Automatiza el scraping del [BOPA](https://www.asturias.es/bopa) cada 24 h y usa un modelo de **IA local** (Ollama + Qwen 2.5 7B) para generar tests personalizados en ~11 s — **sin enviar ningún dato a servicios externos**. Todo corre en infraestructura propia, cumpliendo el RGPD por diseño.
 
-> 📲 **Un único APK para dos entornos.** Al arrancar, la app detecta si el NAS es alcanzable en la red local (`192.168.0.200:8083`) y usa la IP directa; si no, cae automáticamente al dominio HTTPS externo. El mismo binario funciona dentro y fuera de la LAN sin recompilar.
+> **Un único APK para dos entornos.** Al arrancar, la app detecta si el NAS es alcanzable en la red local (`192.168.0.200:8083`) y usa la IP directa; si no, cae automáticamente al dominio HTTPS externo. El mismo binario funciona dentro y fuera de la LAN sin recompilar.
 
 Es mi **Trabajo de Fin de Grado** (DAM). Ficha completa en el [portfolio](https://portfolio.ivanjonasfc.dev/proyectos/oposapp/).
 
-## ✨ Características
+## Características
 
-- 📰 **Convocatorias BOPA** — scraping diario automatizado (n8n · 07:00), filtros y búsqueda full-text tolerante a erratas
-- 🤖 **Tests con IA local** — generación asíncrona (`solicitudId` + polling) y corrección con explicación por pregunta
-- 📊 **Dashboard de progreso** — KPIs, gráficos `fl_chart`, racha e historial · **modo offline** con caché Hive
-- 🔐 **Seguridad y RGPD** — JWT HS512, BCrypt, rate limiting · exportación y borrado de cuenta (Art. 17/20)
-- 🛠️ **Panel de administración** — usuarios, estado de servicios (PostgreSQL, Ollama) y registro de auditoría
+- **Convocatorias BOPA** — scraping diario automatizado (n8n · 07:00), filtros y búsqueda full-text tolerante a erratas
+- **Tests con IA local** — generación asíncrona (`solicitudId` + polling) y corrección con explicación por pregunta
+- **Dashboard de progreso** — KPIs, gráficos `fl_chart`, racha e historial · modo offline con caché Hive
+- **Seguridad y RGPD** — JWT HS512, BCrypt, rate limiting · exportación y borrado de cuenta (Art. 17/20)
+- **Panel de administración** — usuarios, estado de servicios (PostgreSQL, Ollama) y registro de auditoría
 
-## 📱 Capturas
+## Capturas
 
 <table>
   <tr>
-    <td align="center"><b>Login</b><br/><img src="assets/Login.jpg" width="215" alt="Login" /></td>
-    <td align="center"><b>Convocatorias BOPA</b><br/><img src="assets/Bopa.jpg" width="215" alt="BOPA" /></td>
-    <td align="center"><b>Generar test</b><br/><img src="assets/Test.jpg" width="215" alt="Test" /></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Progreso</b><br/><img src="assets/Dashboard.jpg" width="215" alt="Dashboard" /></td>
-    <td align="center"><b>Panel de administración</b><br/><img src="assets/Panel%20Admin.jpg" width="215" alt="Panel Admin" /></td>
-    <td align="center"><b>Ajustes / Perfil</b><br/><img src="assets/Ajustes.jpg" width="215" alt="Ajustes" /></td>
+    <td align="center"><b>Convocatorias BOPA</b><br/><img src="assets/Bopa.jpg" width="230" alt="BOPA" /></td>
+    <td align="center"><b>Progreso</b><br/><img src="assets/Dashboard.jpg" width="230" alt="Dashboard" /></td>
+    <td align="center"><b>Tests con IA</b><br/><img src="assets/Test.jpg" width="230" alt="Tests" /></td>
   </tr>
 </table>
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 ```mermaid
 graph TD
@@ -80,7 +69,7 @@ graph TD
     CD <-->|"HTTPS / REST + JWT (fuera de LAN)"| FL
 ```
 
-## 🧰 Stack tecnológico
+## Stack tecnológico
 
 **Frontend** Flutter 3.24 · Dio + Retrofit · GoRouter · provider · Hive (offline) · fl_chart · Material 3 (`#FF6B00`)
 **Backend** Spring Boot 3 · Java 21 · PostgreSQL 15 · Spring Security (JWT HS512 + BCrypt) · Bucket4j · OpenAPI
@@ -127,7 +116,7 @@ graph TD
 
 </details>
 
-## 🔐 Seguridad
+## Seguridad
 
 - **JWT HS512** stateless (7 días), validado en cada petición por `JwtAuthenticationFilter`
 - **BCrypt** (coste 12) — contraseñas nunca en texto plano
@@ -136,7 +125,7 @@ graph TD
 - **Panel de administración** restringido a red local del NAS (LAN o WireGuard) + rol `ROLE_ADMIN`
 - **RGPD** — consentimiento opt-in con timestamp, borrado (`DELETE /api/user/delete`) y exportación (`GET /api/user/export`)
 
-## 📊 Métricas de rendimiento (medidas en pruebas)
+## Métricas de rendimiento (medidas en pruebas)
 
 | Métrica                                  | Objetivo | Resultado  |
 | ---------------------------------------- | -------- | ---------- |
@@ -146,7 +135,7 @@ graph TD
 | Login con verificación BCrypt            | < 500 ms | **312 ms** |
 
 <details>
-<summary>🗂️ Estructura del proyecto</summary>
+<summary>Estructura del proyecto</summary>
 
 ```text
 OposApp/
@@ -178,7 +167,7 @@ OposApp/
 </details>
 
 <details>
-<summary>▶️ Cómo ejecutar el proyecto</summary>
+<summary>Cómo ejecutar el proyecto</summary>
 
 **Requisitos:** Docker + Compose · Java 21 + Gradle · Flutter SDK 3.24 · Ollama con `qwen2.5:7b`.
 
@@ -199,7 +188,7 @@ flutter run                       # emulador o dispositivo físico
 </details>
 
 <details>
-<summary>🛠️ Solución de problemas comunes</summary>
+<summary>Solución de problemas comunes</summary>
 
 | Error                            | Causa probable                                                                    | Solución                                                          |
 | -------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -211,7 +200,7 @@ flutter run                       # emulador o dispositivo físico
 
 </details>
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Expansión del scraping al BOE y otras Comunidades Autónomas
 - [ ] Fine-tuning del modelo Qwen con datos reales de uso
