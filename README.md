@@ -50,23 +50,23 @@ Es mi **Trabajo de Fin de Grado** (DAM). Ficha completa en el [portfolio](https:
 
 ```mermaid
 graph TD
-    subgraph NAS [" NAS Synology DS224+"]
-        PG[" PostgreSQL 15 · schema tfg"]
-        N8N[" n8n · Scraping BOPA · 07:00 AM"]
-        OL[" Ollama · Qwen 2.5 7B · 11434"]
-        SB[" Spring Boot API · 8083→8081 · JWT HS512 · BCrypt · Bucket4j"]
-        CD[" Caddy · HTTPS · Reverse Proxy"]
+    subgraph NAS["NAS Synology DS224+"]
+        N8N["n8n<br/>Scraping BOPA · 07:00"]
+        PG["PostgreSQL 15<br/>schema tfg"]
+        OL["Ollama<br/>Qwen 2.5 7B"]
+        SB["Spring Boot API<br/>JWT · BCrypt · Bucket4j"]
+        CD["Caddy<br/>HTTPS reverse proxy"]
 
-        N8N -->|"INSERT convocatorias"| PG
-        OL -->|"preguntas JSON"| SB
-        PG <-->|"JPA / Hibernate"| SB
+        N8N -->|convocatorias| PG
+        OL -->|preguntas JSON| SB
+        PG <-->|JPA / Hibernate| SB
         SB --> CD
     end
 
-    FL[" Flutter App · Android 14+ · Dio+Retrofit · GoRouter · provider · Hive · Material 3"]
+    FL["Flutter App<br/>Android 14+ · Dio · GoRouter · Hive"]
 
-    FL -->|"LAN: IP directa"| SB
-    CD <-->|"HTTPS / REST + JWT (fuera de LAN)"| FL
+    FL -->|LAN: IP directa| SB
+    CD <-->|HTTPS + JWT| FL
 ```
 
 ## Stack tecnológico
