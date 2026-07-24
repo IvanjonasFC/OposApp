@@ -22,7 +22,7 @@
 
 Aplicación móvil para opositores que resuelve dos problemas reales del opositor medio en Asturias: los **15-30 min diarios** buscando convocatorias a mano y los **50-150 €/mes** de las academias.
 
-Automatiza el scraping del [BOPA](https://www.asturias.es/bopa) cada 24 h y usa un modelo de **IA local** (Ollama + Qwen 2.5 7B) para generar tests personalizados en ~11 s — **sin enviar ningún dato a servicios externos**. Todo corre en infraestructura propia, cumpliendo el RGPD por diseño.
+Automatiza el scraping del [BOPA](https://www.asturias.es/bopa) cada 24 h y usa un modelo de **IA local** (Ollama, familia Qwen) para generar tests personalizados en ~11 s — **sin enviar ningún dato a servicios externos**. Todo corre en infraestructura propia, cumpliendo el RGPD por diseño.
 
 > **Un único APK para dos entornos.** Al arrancar, la app detecta si el NAS es alcanzable en la red local (`192.168.0.200:8083`) y usa la IP directa; si no, cae automáticamente al dominio HTTPS externo. El mismo binario funciona dentro y fuera de la LAN sin recompilar.
 
@@ -53,7 +53,7 @@ graph TD
     subgraph NAS["NAS Synology DS224+"]
         N8N["n8n<br/>Scraping BOPA · 07:00"]
         PG["PostgreSQL 15<br/>schema tfg"]
-        OL["Ollama<br/>Qwen 2.5 7B"]
+        OL["Ollama<br/>Qwen (local)"]
         SB["Spring Boot API<br/>JWT · BCrypt · Bucket4j"]
         CD["Caddy<br/>HTTPS reverse proxy"]
 
@@ -73,7 +73,7 @@ graph TD
 
 **Frontend** Flutter 3.24 · Dio + Retrofit · GoRouter · provider · Hive (offline) · fl_chart · Material 3 (`#FF6B00`)
 **Backend** Spring Boot 3 · Java 21 · PostgreSQL 15 · Spring Security (JWT HS512 + BCrypt) · Bucket4j · OpenAPI
-**Automatización e IA** n8n (scraping) · Ollama + Qwen 2.5 7B · Caddy (HTTPS)
+**Automatización e IA** n8n (scraping) · Ollama (Qwen2.5-coder free / Qwen3 premium) · Caddy (HTTPS)
 
 <details>
 <summary>Ver detalle del stack</summary>
@@ -111,10 +111,36 @@ graph TD
 | Componente                        | Detalle                                                                       |
 | --------------------------------- | ----------------------------------------------------------------------------- |
 | **n8n**                           | Workflow de scraping del BOPA, se dispara a las 07:00 AM (CET) todos los días |
-| **Ollama + Qwen 2.5 7B (Q4_K_M)** | Generación de tests localmente, sin API de pago, sin salida de datos          |
+| **Ollama** (`/api/generate`)      | Generación de tests en local, sin API de pago ni salida de datos. Modelos configurables: `qwen2.5-coder` (free) y un modelo mayor / `qwen3` (premium), con detección automática de familia |
 | **Caddy Server**                  | Reverse proxy con certificados HTTPS automáticos (Let's Encrypt)              |
 
 </details>
+
+## Configuración de la IA (Ollama)
+
+La generación de tests corre sobre **Ollama** (servidor de IA local). El backend lo llama en `POST /api/generate` (`stream=false`, `num_predict=3500`) y **detecta la familia del modelo** por su nombre para ajustar los parámetros automáticamente:
+
+- **qwen2.5-coder** (plan gratuito) — `temperature 0.3`
+- **qwen3** (plan premium) — `temperature 0.2`, `think=false` (modelos *thinking*)
+
+La URL y los modelos se configuran por variables de entorno (`.env`), sin tocar código:
+
+```env
+OLLAMA_URL=http://<IP_OLLAMA>:11434
+OLLAMA_MODEL_FREE=qwen2.5-coder:7b-instruct
+OLLAMA_MODEL_PREMIUM=qwen2.5-coder:14b-instruct-q3_K_M   # o un modelo qwen3 si lo prefieres
+```
+
+Puesta en marcha de Ollama (una sola vez, en el host de IA):
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh          # instalar Ollama (Linux)
+ollama pull qwen2.5-coder:7b-instruct                  # modelo del plan gratuito
+ollama pull qwen2.5-coder:14b-instruct-q3_K_M          # modelo premium (o tu qwen3)
+curl http://<IP_OLLAMA>:11434/api/tags                 # comprobar que responde
+```
+
+> Ollama corre como servicio aparte (no está en el `docker-compose.yml`, que solo levanta el backend). El backend expone su estado en `GET /admin/ollama/status`, que por dentro consulta `/api/tags`.
 
 ## Seguridad
 
@@ -169,7 +195,7 @@ OposApp/
 <details>
 <summary>Cómo ejecutar el proyecto</summary>
 
-**Requisitos:** Docker + Compose · Java 21 + Gradle · Flutter SDK 3.24 · Ollama con `qwen2.5:7b`.
+**Requisitos:** Docker + Compose · Java 21 + Gradle · Flutter SDK 3.24 · Ollama con `qwen2.5-coder:7b-instruct` (y el modelo premium). Ver [Configuración de la IA](#configuración-de-la-ia-ollama).
 
 ```bash
 # Backend
@@ -194,7 +220,7 @@ flutter run                       # emulador o dispositivo físico
 | -------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | App no recibe token tras login   | Interceptor Dio no adjunta `Authorization: Bearer`                                | Revisar `ApiService` y los logs del backend                      |
 | App apunta al entorno equivocado | El NAS no responde en `192.168.0.200:8083` (autodetección LAN/HTTPS)              | Verificar que el NAS es alcanzable en la LAN                     |
-| Timeout en generación de tests   | Ollama apagado o saturado                                                          | Verificar que Ollama responde en el puerto `11434`              |
+| Timeout en generación de tests   | Ollama apagado o saturado                                                          | `curl http://<IP_OLLAMA>:11434/api/tags` desde el NAS           |
 | Error Hibernate 6 al arrancar    | Entidades sin `@Table(schema="tfg")` o `scale`/`precision` en campos no BigDecimal | Eliminar `scale`/`precision` de esos campos                     |
 | Scraping del BOPA sin resultados | Fallo en algún nodo del workflow n8n                                              | Consultar la tabla de historial de scraping                     |
 
