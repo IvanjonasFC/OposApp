@@ -12,13 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Portfolio](https://img.shields.io/badge/Portfolio-ff6b00?logo=astro&logoColor=white)](https://portfolio.ivanjonasfc.dev/proyectos/oposapp/)
 
-<table>
-  <tr>
-    <td align="center"><img src="assets/Login.jpg" width="240" alt="Login" /></td>
-    <td align="center"><img src="assets/Bopa.jpg" width="240" alt="Convocatorias BOPA" /></td>
-    <td align="center"><img src="assets/Dashboard.jpg" width="240" alt="Dashboard de progreso" /></td>
-  </tr>
-</table>
+<img src="assets/opposapp.png" alt="OposApp" width="920" />
 
 </div>
 
@@ -30,7 +24,7 @@ Aplicación móvil para opositores que resuelve dos problemas reales del oposito
 
 Automatiza el scraping del [BOPA](https://www.asturias.es/bopa) cada 24 h y usa un modelo de **IA local** (Ollama + `qwen2.5-coder`, 7B en el tier gratuito y 14B en el premium) para generar tests personalizados en ~11 s, **sin enviar ningún dato a servicios externos**. Todo corre en infraestructura propia, cumpliendo el RGPD por diseño.
 
-> **Un único APK para dos entornos.** Al arrancar, la app detecta si el NAS es alcanzable en la red local (`192.168.0.200:8083`) y usa la IP directa; si no, cae automáticamente al dominio HTTPS externo. El mismo binario funciona dentro y fuera de la LAN sin recompilar.
+> **Un único APK para dos entornos.** Al arrancar, la app detecta si el NAS es alcanzable en la red local y usa la IP directa; si no, cae automáticamente al dominio HTTPS externo. El mismo binario funciona dentro y fuera de la LAN sin recompilar.
 
 Es mi **Trabajo de Fin de Grado** (DAM). Ficha completa en el [portfolio](https://portfolio.ivanjonasfc.dev/proyectos/oposapp/).
 
@@ -46,14 +40,9 @@ Es mi **Trabajo de Fin de Grado** (DAM). Ficha completa en el [portfolio](https:
 
 <table>
   <tr>
-    <td align="center"><b>Login</b><br/><img src="assets/Login.jpg" width="215" alt="Login" /></td>
-    <td align="center"><b>Convocatorias BOPA</b><br/><img src="assets/Bopa.jpg" width="215" alt="BOPA" /></td>
-    <td align="center"><b>Generar test</b><br/><img src="assets/Test.jpg" width="215" alt="Test" /></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Progreso</b><br/><img src="assets/Dashboard.jpg" width="215" alt="Dashboard" /></td>
-    <td align="center"><b>Panel de administración</b><br/><img src="assets/Panel%20Admin.jpg" width="215" alt="Panel Admin" /></td>
-    <td align="center"><b>Ajustes / Perfil</b><br/><img src="assets/Ajustes.jpg" width="215" alt="Ajustes" /></td>
+    <td align="center"><b>Login</b><br/><img src="assets/Login.jpg" width="240" alt="Login" /></td>
+    <td align="center"><b>Convocatorias BOPA</b><br/><img src="assets/Bopa.jpg" width="240" alt="Convocatorias BOPA" /></td>
+    <td align="center"><b>Panel de administración</b><br/><img src="assets/Panel%20Admin.jpg" width="240" alt="Panel de administración" /></td>
   </tr>
 </table>
 
@@ -61,7 +50,7 @@ Es mi **Trabajo de Fin de Grado** (DAM). Ficha completa en el [portfolio](https:
 
 ```mermaid
 graph TD
-    subgraph NAS ["NAS Synology DS920+"]
+    subgraph NAS ["NAS Synology DS224+"]
         PG["PostgreSQL 15 - schema tfg"]
         N8N["n8n - Scraping BOPA - 07:00"]
         OL["Ollama - qwen2.5-coder 7B/14B - 11434"]
@@ -227,7 +216,7 @@ cp .env.example .env      # rellena los secretos reales
 docker compose up -d --build
 ```
 
-> La URL del backend se resuelve en runtime en `ApiService.initialize()`: LAN → `192.168.0.200:8083`, fuera de LAN → dominio HTTPS. Para dev en el propio PC usa `baseUrlLocal` (`http://localhost:8081/api`) en `api_constants.dart`.
+> La URL del backend se resuelve en runtime en `ApiService.initialize()`: en LAN usa la IP local del NAS y, fuera de la LAN, el dominio HTTPS. Para dev en el propio PC usa `baseUrlLocal` (`http://localhost:8081/api`) en `api_constants.dart`.
 
 </details>
 
@@ -237,7 +226,7 @@ docker compose up -d --build
 | Error | Causa probable | Solución |
 | --- | --- | --- |
 | App no recibe token tras login | El interceptor Dio no adjunta `Authorization: Bearer` | Revisar `ApiService` y los logs del backend |
-| App apunta al entorno equivocado | El NAS no responde en `192.168.0.200:8083` | Verificar que el NAS es alcanzable en la LAN |
+| App apunta al entorno equivocado | El NAS no responde en la red local | Verificar que el NAS es alcanzable en la LAN |
 | Timeout en generación de tests | Ollama apagado o saturado | Verificar que Ollama responde en el puerto `11434` |
 | Error de Hibernate 6 al arrancar | Entidades sin `@Table(schema="tfg")` o `scale`/`precision` en campos no `BigDecimal` | Eliminar `scale`/`precision` de esos campos |
 | Scraping del BOPA sin resultados | Fallo en algún nodo del workflow n8n | Consultar la tabla de historial de scraping |
@@ -260,7 +249,10 @@ docker compose up -d --build
 **Iván Jonás Fernández Correa** — TFG, Desarrollo de Aplicaciones Multiplataforma (DAM), 2025-2026.
 Tutores: Delio Tolivia Cadrecha (PIDAM) y Mario Álvarez Fernández (PDAW).
 
-[Portfolio](https://portfolio.ivanjonasfc.dev) · [LinkedIn](https://linkedin.com/in/ivanjonasfc)
+<p>
+  <a href="https://portfolio.ivanjonasfc.dev/proyectos/oposapp/"><img src="https://img.shields.io/badge/Ver_en_el_Portfolio-ff6b00?style=for-the-badge&logo=astro&logoColor=white" alt="Portfolio"></a>
+  <a href="https://www.linkedin.com/in/ivanjonasfc/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
+</p>
 
 ## Licencia
 
