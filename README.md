@@ -1,4 +1,3 @@
-<img src="assets/opposapp.png" width="880" alt="OposApp — seguimiento del BOPA y tests con IA local" />
 <div align="center">
 
 # OposApp
@@ -87,6 +86,8 @@ graph TD
 **Backend** — Spring Boot 3, Java 21, PostgreSQL 15, Spring Security (JWT HS512 + BCrypt), Bucket4j, OpenAPI.
 **Automatización e IA** — n8n (scraping), Ollama + qwen2.5-coder (7B free / 14B premium), Caddy (HTTPS).
 
+> **Servicios externos (no incluidos en el repositorio):** Ollama, n8n, PostgreSQL y Caddy corren en el NAS o en tu host. El repo contiene la app Flutter, la API Spring Boot, los scripts de base de datos y el workflow de n8n exportado; Ollama y sus modelos se instalan aparte (ver *Cómo ejecutar el proyecto*).
+
 <details>
 <summary>Ver detalle del stack</summary>
 
@@ -171,9 +172,11 @@ OposApp/
 │       ├── widgets/                  # ad_banner_widget, app_toast, reporte_dialog
 │       └── cache/                    # hive_cache.dart (modo offline)
 │
-├── base_datos/                       # Scripts SQL / schema tfg + workflow n8n
-├── assets/                           # Capturas y recursos
-└── docker-compose.yml                # Backend en el NAS (red mgmt_net)
+├── base_datos/                       # 01_schema.sql, 02_datos_muestra.sql, n8n_workflow_bopa_v2.json
+├── assets/                           # Capturas de la app
+├── .env.example                      # Plantilla de variables de entorno (perfil NAS)
+├── docker-compose.yml                # Despliegue del backend en el NAS
+└── Despliegue.md                     # Guía de despliegue paso a paso
 ```
 
 </details>
@@ -181,9 +184,24 @@ OposApp/
 <details>
 <summary>Cómo ejecutar el proyecto</summary>
 
-**Requisitos:** Java 21 + Gradle, Flutter SDK 3.24, PostgreSQL 15, Ollama con `qwen2.5-coder:7b-instruct`.
+**Requisitos:** Java 21 + Gradle, Flutter SDK 3.24, PostgreSQL 15 y Ollama.
 
-Backend (desarrollo local):
+1) IA local (Ollama) — se instala aparte, no está en el repo:
+
+```bash
+ollama pull qwen2.5-coder:7b-instruct                 # modelo gratuito
+# opcional (premium): ollama pull qwen2.5-coder:14b-instruct-q3_K_M
+```
+
+2) Base de datos (schema `tfg`):
+
+```bash
+createdb tfg_db
+psql -d tfg_db -f base_datos/01_schema.sql
+psql -d tfg_db -f base_datos/02_datos_muestra.sql     # datos de ejemplo (opcional)
+```
+
+3) Backend:
 
 ```bash
 cd api-backend
@@ -192,13 +210,15 @@ cp src/main/resources/application.yml.example src/main/resources/application.yml
 # API en http://localhost:8081 · Swagger: http://localhost:8081/swagger-ui.html
 ```
 
-Frontend:
+4) Frontend:
 
 ```bash
 cd oposapp
 flutter pub get
 flutter run
 ```
+
+5) Scraping del BOPA (opcional): importa `base_datos/n8n_workflow_bopa_v2.json` en tu instancia de n8n.
 
 Despliegue en el NAS (perfil `nas`):
 

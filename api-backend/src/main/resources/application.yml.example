@@ -33,6 +33,9 @@ jwt:
 
 ollama:
   url: "http://<OLLAMA_HOST>:11434"
+  # Modelos que hay que descargar con `ollama pull` (ver README).
+  model-free: "qwen2.5-coder:7b-instruct"
+  model-premium: "qwen2.5-coder:14b-instruct-q3_K_M"
 
 app:
   url: "https://<TU_DOMINIO>"   # URL pública de la API (aparece en emails)
