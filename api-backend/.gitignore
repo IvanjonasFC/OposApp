@@ -53,3 +53,6 @@ HELP.md
 
 ### Carpetas de trabajo temporal ###
 _basura*/
+
+### El wrapper de Gradle SÍ debe versionarse (la negación va tras *.jar para que gane) ###
+!gradle/wrapper/gradle-wrapper.jar
