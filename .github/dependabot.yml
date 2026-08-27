@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Backend Spring Boot (Gradle)
+  - package-ecosystem: gradle
+    directory: "/api-backend"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # App Flutter (Dart / pub)
+  - package-ecosystem: pub
+    directory: "/oposapp"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Las propias GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

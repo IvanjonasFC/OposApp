@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend · Spring Boot (Java 21)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Permisos del wrapper
+        working-directory: api-backend
+        run: chmod +x ./gradlew
+      - name: Compilar y empaquetar
+        working-directory: api-backend
+        run: ./gradlew --no-daemon assemble
+      # Los tests de integración necesitan PostgreSQL; se ejecutan como aviso
+      # (no bloquean). Para hacerlos gate, añade un service container de Postgres
+      # y cambia continue-on-error a false.
+      - name: Tests (informativo)
+        working-directory: api-backend
+        run: ./gradlew --no-daemon test
+        continue-on-error: true
+
+  flutter:
+    name: Frontend · Flutter (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Dependencias
+        working-directory: oposapp
+        run: flutter pub get
+      - name: Análisis estático (informativo)
+        working-directory: oposapp
+        run: flutter analyze
+        continue-on-error: true
+      - name: Tests (informativo)
+        working-directory: oposapp
+        run: flutter test
+        continue-on-error: true
+      - name: Build APK (debug) — verifica que compila
+        working-directory: oposapp
+        run: flutter build apk --debug
