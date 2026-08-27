@@ -4,6 +4,7 @@
 
 **Seguimiento automático del BOPA y tests de práctica con IA local, con privacidad total.**
 
+[![CI](https://github.com/IvanjonasFC/OposApp/actions/workflows/ci.yml/badge.svg)](https://github.com/IvanjonasFC/OposApp/actions/workflows/ci.yml)
 [![Flutter](https://img.shields.io/badge/Flutter-3.24-blue?logo=flutter)](https://flutter.dev)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-brightgreen?logo=spring)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk)](https://openjdk.org)
