@@ -233,14 +233,6 @@ docker compose up -d --build
 
 </details>
 
-## Roadmap
-
-- [ ] Expansión del scraping al BOE y otras Comunidades Autónomas
-- [ ] Fine-tuning del modelo con datos reales de uso
-- [ ] Simulacros cronometrados y modo competitivo
-- [ ] Notificaciones push (FCM) por categoría
-- [ ] Expansión a iOS y web
-- [ ] Modelo B2B: licencias white-label para academias
 
 ---
 
