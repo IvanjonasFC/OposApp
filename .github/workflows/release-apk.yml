@@ -1,4 +1,4 @@
-﻿name: Release APK
+name: Release APK
 on:
   push:
     tags: ['v*']
@@ -22,7 +22,7 @@ jobs:
         run: flutter build apk --release
       - name: Crear Release con la APK
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: oposapp/build/app/outputs/flutter-apk/app-release.apk
           generate_release_notes: true
